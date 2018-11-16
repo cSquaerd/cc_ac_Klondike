@@ -1,6 +1,6 @@
 module ccacKlondike
     import Base.show, Random.shuffle!, StatsBase.counts
-    export Card, KlondikeBoard, longestTableau, sameColor, canMoveCard, canMoveStack
+    export Card, KlondikeBoard, longestTableau, sameColor, canMoveCard, canMoveStack, move!, isPlayable
 
     ranks = ["Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King"];
     suits = ["\u2660", "\u2661", "\u2662", "\u2663"]
@@ -97,7 +97,7 @@ module ccacKlondike
 
     function sameColor(c1::Card, c2::Card)
         local suitSum = c1.suit + c2.suit
-        suitSum == 5 || c1.suit in (1, 4) && suitSum in (2, 8) || c1.suit in (2, 3) && suitSum in (4, 6)
+        suitSum == 5 || c1.suit in (1, 4) && c2.suit in (1, 4) || c1.suit in (2, 3) && c2.suit in (2, 3)
     end
 
     function canMoveCard(srcCard::Card, destCard::Card)
@@ -113,12 +113,37 @@ module ccacKlondike
     end
 
     function move!(kb::KlondikeBoard, mode::String, src::Integer, dest::Integer, baseAddr::Integer = 1, elements::Integer = 1)
-        local fnds = [kb.fndC, kb.fndS, kb.fndH, kb.fndD]
-        local tableaus = [kb.t1, kb.t2, kb.t3, kb.t4, kb.t5, kb.t6, kb.t7]
-        local tableauIndices = [kb.iT1, kb.iT2, kb.iT3, kb.iT4, kb.iT5, kb.iT6, kb.iT7]
+        function changeTI(kb::KlondikeBoard, index::Integer, value::Integer)
+            index == 1 ? kb.iT1 = value :
+            index == 2 ? kb.iT2 = value :
+            index == 3 ? kb.iT3 = value :
+            index == 4 ? kb.iT4 = value :
+            index == 5 ? kb.iT5 = value :
+            index == 6 ? kb.iT6 = value :
+            kb.iT7 = value
+        end
+    
+        fnds = [kb.fndC, kb.fndS, kb.fndH, kb.fndD]
+        tableaus = [kb.t1, kb.t2, kb.t3, kb.t4, kb.t5, kb.t6, kb.t7]
+        tableauIndices = [kb.iT1, kb.iT2, kb.iT3, kb.iT4, kb.iT5, kb.iT6, kb.iT7]
 
         if mode == "tt"
             local stack = Card[]
+            if baseAddr >= tableauIndices[src] &&
+                canMoveStack(tableaus[src][baseAddr:(baseAddr + elements - 1)]) &&
+                canMoveCard(tableaus[src][baseAddr], last(tableaus[dest]))
+
+                for i = 1:elements
+                    push!(stack, pop!(tableaus[src]))
+                end
+                for i = 1:elements
+                    push!(tableaus[dest], pop!(stack))
+                end
+            
+                changeTI(kb, src, length(tableaus[src]) < tableauIndices[src] ? length(tableaus[src]) : tableauIndices[src])
+            else
+                throw(ErrorException("Error: Illegal move."))
+            end
             
         elseif mode == "tf"
         elseif mode == "ft"
@@ -126,8 +151,21 @@ module ccacKlondike
         elseif mode == "sf"
         end
     end
-    #=
+    
     function isPlayable(kb::KlondikeBoard)
+        tableaus = [kb.t1, kb.t2, kb.t3, kb.t4, kb.t5, kb.t6, kb.t7]
+        for c in kb.stock
+            for t in tableaus
+                canMoveCard(c, last(t)) ? (return true) : continue
+            end
+        end
+    
+        for ts in tableaus
+            for td in tableaus
+                ts != td && canMoveCard(last(ts), last(td)) ? (return true) : continue
+            end
+        end
+    
+        false
     end
-    =#
 end
