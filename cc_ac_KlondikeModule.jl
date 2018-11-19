@@ -152,18 +152,23 @@ module ccacKlondike
         end
     end
     
-    function isPlayable(kb::KlondikeBoard)
+    function isPlayable(kb::KlondikeBoard, drawMode::Integer = 1)
         tableaus = [kb.t1, kb.t2, kb.t3, kb.t4, kb.t5, kb.t6, kb.t7]
-        for c in kb.stock
+        local stockCards
+        drawMode == 1 ? (stockCards = 1:24) : (stockCards = 3:3:24)
+    
+        for i = stockCards            
             for t in tableaus
-                canMoveCard(c, last(t)) ? (return true) : continue
+                canMoveCard(kb.stock[i], last(t)) ? (return true) : continue
             end
+            kb.stock[i].rank == 1 ? (return true) : continue
         end
     
-        for ts in tableaus
-            for td in tableaus
-                ts != td && canMoveCard(last(ts), last(td)) ? (return true) : continue
+        for tsrc in tableaus
+            for tdest in tableaus
+                tsrc != tdest && canMoveCard(last(tsrc), last(tdest)) ? (return true) : continue
             end
+            last(tsrc).rank == 1 ? (return true) : continue
         end
     
         false
