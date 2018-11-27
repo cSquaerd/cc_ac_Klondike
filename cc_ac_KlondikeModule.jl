@@ -1,6 +1,6 @@
 module ccacKlondike
     import Base.show, Random.shuffle!, StatsBase.counts
-    export Card, KlondikeBoard, longestTableau, sameColor, canMoveCard, canMoveStack, move!, isPlayable
+    export Card, KlondikeBoard, longestTableau, sameColor, canMoveCard, canMoveStack, move!, isPlayable, klondikeCarlo
 
     ranks = ["Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King"];
     suits = ["\u2660", "\u2661", "\u2662", "\u2663"]
@@ -172,5 +172,14 @@ module ccacKlondike
         end
     
         false
+    end
+
+    function klondikeCarlo(trials::Integer = 100_000, drawMode::Integer = 3)
+        local unplayables = 0
+        for i = 1:trials
+            local kb = KlondikeBoard()
+            isPlayable(kb, drawMode) ? continue : unplayables += 1
+        end
+        (unplayables, unplayables / trials)
     end
 end
