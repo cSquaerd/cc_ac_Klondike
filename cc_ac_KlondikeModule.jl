@@ -174,12 +174,12 @@ module ccacKlondike
         false
     end
 
-    function klondikeCarlo(trials::Integer = 100_000, drawMode::Integer = 3)
+    function klondikeCarlo(trials::Integer = 10_000_000, drawMode::Integer = 3)
         local unplayables = 0
         for i = 1:trials
             local kb = KlondikeBoard()
             isPlayable(kb, drawMode) ? continue : unplayables += 1
         end
-        (unplayables, unplayables / trials)
+        (unplayables, (unplayables / trials)*100)
     end
 end
