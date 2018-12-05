@@ -120,6 +120,8 @@ module ccacKlondike
 
     # Checks if one card (src) can be moved onto the top of another (dest)
     function canMoveCard(srcCard::Card, destCard::Card)
+        # A move is legal if the two cards involved are different colors,
+        # and the src card is one less in rank than the dest card
         !sameColor(srcCard, destCard) && srcCard.rank + 1 == destCard.rank
     end
 
@@ -173,9 +175,13 @@ module ccacKlondike
             end
             
         elseif mode == "tf"
+            # TODO: code this move case
         elseif mode == "ft"
+            # TODO: code this move case
         elseif mode == "st"
+            # TODO: code this move case
         elseif mode == "sf"
+            # TODO: code this move case
         end
     end
     
@@ -209,6 +215,7 @@ module ccacKlondike
             local kb = KlondikeBoard()
             isPlayable(kb, drawMode) ? continue : unplayables += 1
         end
-        (unplayables, (unplayables / trials)*100)
+        # Return a tuple with total unplayable games and percentage of unplayable games
+        (unplayables, unplayables / trials * 100)
     end
 end
