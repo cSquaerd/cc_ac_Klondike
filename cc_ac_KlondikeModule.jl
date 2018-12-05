@@ -1,27 +1,38 @@
 module ccacKlondike
-    import Base.show, Random.shuffle!, StatsBase.counts
+    # Import statement; Only two external functions needed
+    import Base.show, Random.shuffle!
+    # Export statement
     export Card, KlondikeBoard, longestTableau, sameColor, canMoveCard, canMoveStack, move!, isPlayable, klondikeCarlo
 
+    # Rank & Suit arrays for Base.show
     ranks = ["Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King"];
     suits = ["\u2660", "\u2661", "\u2662", "\u2663"]
 
+    # Card struct with two constructors
     mutable struct Card
         rank::Integer
         suit::Integer
+        # Rank/Suit constructor
         Card(r::Integer, s::Integer) = r in 1:13 && s in 1:4 ? new(r, s) : throw(ArgumentError("Rank and/or Suit out of bounds."))
+        # Ordinal constructor
         Card(i::Integer) = i in 1:52 ?
             i % 13 == 0 ? new(13, div(i, 13)) : new(i % 13, div(i, 13) + 1) :
                 throw(ArgumentError("The arguement must be an integer between 1 and 52."))
     end
 
+    # printstyled() is used to make Heart & Diamond cards appear red
     Base.show(io::IO, c::Card) = printstyled(io, ranks[c.rank], suits[c.suit], color = c.suit % 3 == 1 ? :normal : :red)
 
+    # K.B. struct (note the arrays of cards; there are many of them)
     mutable struct KlondikeBoard
+        # stock (leftover deck of cards after dealing initial tableaus)
         stock::Array{Card, 1}
+        # foundations (where the cards end up in a finished game)
         fndC::Array{Card, 1}
         fndS::Array{Card, 1}
         fndH::Array{Card, 1}
         fndD::Array{Card, 1}
+        # tableaus (main playing area, 21 cards are covered initially)
         t1::Array{Card, 1}
         t2::Array{Card, 1}
         t3::Array{Card, 1}
@@ -29,7 +40,9 @@ module ccacKlondike
         t5::Array{Card, 1}
         t6::Array{Card, 1}
         t7::Array{Card, 1}
+        # index of Stock (which card is currently playable from the stock)
         iStock::Integer
+        # index of Tableau X (which card is the lowest in order that is face-up)
         iT1::Integer
         iT2::Integer
         iT3::Integer
@@ -37,8 +50,10 @@ module ccacKlondike
         iT5::Integer
         iT6::Integer
         iT7::Integer
+        # debug flag for viewing all cards in tableaus
         invisible::Bool
     
+        # Constructor (uses shuffle!() on an array of all cards and partitions them)
         function KlondikeBoard(invisible::Bool = true)
             local deck = collect(Card(i) for i = 1:52)
             shuffle!(deck)
@@ -53,6 +68,7 @@ module ccacKlondike
         end
     end
 
+    # Determines which tableau has the most cards of a given board
     function longestTableau(kb::KlondikeBoard)
         local m = max(length(kb.t1), length(kb.t2), length(kb.t3), length(kb.t4), length(kb.t5), length(kb.t6), length(kb.t7))
         m == 1 ? kb.t1 : 
@@ -64,6 +80,7 @@ module ccacKlondike
                                 kb.t7
     end
 
+    # Displays the board as it would appear in real life
     function Base.show(io::IO, kb::KlondikeBoard)
         local i, t
         local cardBack = "[#??#]"
@@ -95,15 +112,18 @@ module ccacKlondike
         end
     end
 
+    # Checks if two cars are the same color (red or black)
     function sameColor(c1::Card, c2::Card)
         local suitSum = c1.suit + c2.suit
         suitSum == 5 || c1.suit in (1, 4) && c2.suit in (1, 4) || c1.suit in (2, 3) && c2.suit in (2, 3)
     end
 
+    # Checks if one card (src) can be moved onto the top of another (dest)
     function canMoveCard(srcCard::Card, destCard::Card)
         !sameColor(srcCard, destCard) && srcCard.rank + 1 == destCard.rank
     end
 
+    # Checks if a stack of cards (array-slice) can be moved at all (is it in proper order?)
     function canMoveStack(stack::Array{Card, 1})
         local i
         for i = 1:length(stack) - 1
@@ -112,6 +132,13 @@ module ccacKlondike
         true
     end
 
+    # Moves a card from somewhere (src) in one location to another (dest)
+    # Has five different classes of moves
+    # Tableau    -->    Tableua
+    # Tableau    --> Foundation
+    # Foundation -->    Tableau
+    # Stock      -->    Tableau
+    # Stock      --> Foundation
     function move!(kb::KlondikeBoard, mode::String, src::Integer, dest::Integer, baseAddr::Integer = 1, elements::Integer = 1)
         function changeTI(kb::KlondikeBoard, index::Integer, value::Integer)
             index == 1 ? kb.iT1 = value :
@@ -152,6 +179,7 @@ module ccacKlondike
         end
     end
     
+    # Checks if there is a move possible in a current board
     function isPlayable(kb::KlondikeBoard, drawMode::Integer = 1)
         tableaus = [kb.t1, kb.t2, kb.t3, kb.t4, kb.t5, kb.t6, kb.t7]
         local stockCards
@@ -174,6 +202,7 @@ module ccacKlondike
         false
     end
 
+    # Runs a Monte Carlo simulation of initial configurations of the board
     function klondikeCarlo(trials::Integer = 100_000, drawMode::Integer = 3)
         local unplayables = 0
         for i = 1:trials
