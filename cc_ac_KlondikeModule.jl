@@ -115,6 +115,9 @@ module ccacKlondike
     # Checks if two cars are the same color (red or black)
     function sameColor(c1::Card, c2::Card)
         local suitSum = c1.suit + c2.suit
+        # The first case is 5 since 5 = 1 + 4 (black cards) = 3 + 2 (red cards)
+        # Upon realization, the suitSum variable could be forgone entirely
+        # TODO: Consider removing suitSum and rely on in-checks
         suitSum == 5 || c1.suit in (1, 4) && c2.suit in (1, 4) || c1.suit in (2, 3) && c2.suit in (2, 3)
     end
 
