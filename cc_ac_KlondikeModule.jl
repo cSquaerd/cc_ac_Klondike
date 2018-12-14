@@ -9,6 +9,23 @@ module ccacKlondike
     suits = ["\u2660", "\u2661", "\u2662", "\u2663"]
 
     # Card struct with two constructors
+    """
+    # Description:
+    Struct with two integers that represents a playing card.
+    
+    # Constructors:
+    * Rank/Suit:
+    ```julia
+    julia> Card(1, 3)
+    Ace♢
+    ```
+
+    * Ordinal:
+    ```julia
+    julia> Card(14)
+    Ace♡
+    ```
+    """
     mutable struct Card
         rank::Integer
         suit::Integer
@@ -24,6 +41,32 @@ module ccacKlondike
     Base.show(io::IO, c::Card) = printstyled(io, ranks[c.rank], suits[c.suit], color = c.suit % 3 == 1 ? :normal : :red)
 
     # K.B. struct (note the arrays of cards; there are many of them)
+    """
+    # Description:
+    Struct with a myriad of Card arrays that function as a board for playing Klondike Solitaire. The arrays of Cards are of three types:
+
+    * **Tableau**: A column of cards where the last indexed card is playable, any stack that ends at the last index. Each tableau has a special index of the form `iT#` that identifies which address contains the first visible card. At the start of a game, every `iT#` value is set to the length of the tableau.
+    * **Stock**: Leftover cards after tableaus are dealt. 24 in total, the cards in the stock can be cycled through in order and drawn either once or thrice at a time.
+    * **Foundation**: Initially empty, each foundation is tied to a certain suit, and cards must be placed in the foundation from Ace to King. Once all four foundations are full, the game is won.
+
+    # Constructor:
+    There is one constructor. It generates an array of all 52 playing cards, shuffles it, and then slices it into the fields of the struct.
+    ```julia
+    julia> KlondikeBoard()
+    ```
+    ```
+    Stock:           Clubs: Spades: Hearts: Diamonds:
+    6♢
+    Tab. 1: Tab. 2: Tab. 3: Tab. 4: Tab. 5: Tab. 6: Tab. 7:
+    King♠   [#??#]  [#??#]  [#??#]  [#??#]  [#??#]  [#??#]
+            6♠      [#??#]  [#??#]  [#??#]  [#??#]  [#??#]
+                    3♢     [#??#]  [#??#]  [#??#]  [#??#]
+                            7♢     [#??#]  [#??#]  [#??#]
+                                    8♣     [#??#]  [#??#]
+                                            9♡    [#??#]
+                                                    10♠
+    ```
+    """
     mutable struct KlondikeBoard
         # stock (leftover deck of cards after dealing initial tableaus)
         stock::Array{Card, 1}
@@ -69,6 +112,7 @@ module ccacKlondike
     end
 
     # Determines which tableau has the most cards of a given board
+    "Determines the longest tableau (an array of Cards) in the given board `kb`."
     function longestTableau(kb::KlondikeBoard)
         local m = max(length(kb.t1), length(kb.t2), length(kb.t3), length(kb.t4), length(kb.t5), length(kb.t6), length(kb.t7))
         m == 1 ? kb.t1 : 
@@ -113,6 +157,7 @@ module ccacKlondike
     end
 
     # Checks if two cars are the same color (red or black)
+    "Returns `true` if the suits of `c1` and `c2` are such that they are the same color. Hearts and Diamonds are Red. Spades and Clubs are Black."
     function sameColor(c1::Card, c2::Card)
         local suitSum = c1.suit + c2.suit
         # The first case is 5 since 5 = 1 + 4 (black cards) = 3 + 2 (red cards)
@@ -122,6 +167,7 @@ module ccacKlondike
     end
 
     # Checks if one card (src) can be moved onto the top of another (dest)
+    "Returns `true` if the `srccard` can be legally moved onto the top of the `destcard`."
     function canMoveCard(srcCard::Card, destCard::Card)
         # A move is legal if the two cards involved are different colors,
         # and the src card is one less in rank than the dest card
@@ -129,6 +175,7 @@ module ccacKlondike
     end
 
     # Checks if a stack of cards (array-slice) can be moved at all (is it in proper order?)
+    "Returns `true` if the `stack` of cards is in legal order."
     function canMoveStack(stack::Array{Card, 1})
         local i
         for i = 1:length(stack) - 1
@@ -144,6 +191,7 @@ module ccacKlondike
     # Foundation -->    Tableau
     # Stock      -->    Tableau
     # Stock      --> Foundation
+    "Modifies a board `kb` by performing a legal move. There are five modes: `tt`, `tf`, `ft`, `st`, and `sf`."
     function move!(kb::KlondikeBoard, mode::String, src::Integer, dest::Integer, baseAddr::Integer = 1, elements::Integer = 1)
         function changeTI(kb::KlondikeBoard, index::Integer, value::Integer)
             index == 1 ? kb.iT1 = value :
@@ -189,6 +237,7 @@ module ccacKlondike
     end
     
     # Checks if there is a move possible in a current board
+    "Returns `true` if the board under the given `drawMode` has a legal move possibly to be played."
     function isPlayable(kb::KlondikeBoard, drawMode::Integer = 1)
         tableaus = [kb.t1, kb.t2, kb.t3, kb.t4, kb.t5, kb.t6, kb.t7]
         local stockCards
@@ -212,6 +261,7 @@ module ccacKlondike
     end
 
     # Runs a Monte Carlo simulation of initial configurations of the board
+    "Runs a Monte Carlo simulation of initial configurations of the Klondike board under a given `drawMode`."
     function klondikeCarlo(trials::Integer = 1_000_000, drawMode::Integer = 3)
         local unplayables = 0
         for i = 1:trials
